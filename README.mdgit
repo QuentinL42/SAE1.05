@@ -1,0 +1,19 @@
+# SAE1.05
+initgit
+add
+README.mdgit
+commit
+-m
+first commit
+git
+branch
+-M
+maingit
+remote
+add
+origin
+https://github.com/QuentinL42/SAE1.05.gitgit
+push
+-u
+origin
+main
