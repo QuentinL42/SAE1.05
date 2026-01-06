@@ -1,0 +1,22 @@
+SAE 1.05 :
+
+Faire une notice à rendre au plus tard le mercredi 14 janvier.
+Notice : Description du programme python, pour une personne.
+
+
+
+
+première partie tout en python, garder tout ce qui est significatif sur le tcpdump, faire une analyse 
+
+Eurodatage ????
+
+C'est pas parce qu'il y a beaucoup de connexion sur un site que c'est un hacker.
+
+Si il a plusieurs ports sur une même connexion ça peut être bizarre.
+
+
+
+Soutenance : Partie démo + ??????
+
+
+Faire une page markdown pour montrer les informations récupéré et analysé 

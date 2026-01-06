@@ -3,32 +3,63 @@ from tkinter import filedialog, messagebox
 import csv
 import re
 
-# Regex pour extraire les infos des entêtes IP
+# Regex pour extraire les infos principales d'une ligne tcpdump IP
 pattern = re.compile(
-    r'(?P<time>\d{2}:\d{2}:\d{2}\.\d+)\s+IP\s+(?P<src>[^\s]+)\s+>\s+(?P<dst>[^\s]+):\s+Flags\s+\[(?P<flags>[^\]]+)\],\s+seq\s+(?P<seq>[0-9:]+),\s+ack\s+(?P<ack>\d+),\s+win\s+(?P<win>\d+).*length\s+(?P<length>\d+)')
+    r'(?P<time>\d{2}:\d{2}:\d{2}\.\d+)\s+IP\s+'
+    r'(?P<src>[^ ]+)\s+>\s+(?P<dst>[^:]+):'
+    r'.*Flags\s+\[(?P<flags>[^\]]+)\].*length\s+(?P<length>\d+)'
+)
+
+def split_ip_port(field):
+    """
+    Sépare "<ip>.<port>" ou "<host>.<service>" en (ip/host, port/service).
+    Ex :
+      "192.168.190.130.50245" -> ("192.168.190.130", "50245")
+      "BP-Linux8.ssh"         -> ("BP-Linux8", "ssh")
+      "ns1.lan.rt.domain"     -> ("ns1.lan.rt", "domain")
+      "c0a8"                  -> ("c0a8", "")
+    """
+    parts = field.rsplit('.', 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    else:
+        return field, ""
 
 def choisir_fichier():
-    # Ouvre un fichier dump réseau, lit et exporte les entêtes en CSV
+    # Sélection du fichier dump
     chemin_fichier = filedialog.askopenfilename(
         title="Sélectionner un fichier dump",
         filetypes=[("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*")]
     )
-    
+
     if not chemin_fichier:
         label_chemin.config(text="Aucun fichier sélectionné")
         return
-    
+
     label_chemin.config(text=f"Fichier sélectionné : {chemin_fichier}")
-    
+
     try:
         with open(chemin_fichier, "r", encoding="utf-8") as f:
             lignes = f.read().splitlines()
 
         entetes = []
+
         for ligne in lignes:
             match = pattern.search(ligne)
             if match:
-                entetes.append(match.groupdict())
+                d = match.groupdict()
+                src_ip, src_port = split_ip_port(d["src"])
+                dst_ip, dst_port = split_ip_port(d["dst"])
+
+                entetes.append({
+                    "time": d["time"],
+                    "src_ip": src_ip,
+                    "src_port": src_port,
+                    "dst_ip": dst_ip,
+                    "dst_port": dst_port,
+                    "flags": d["flags"],
+                    "length": d["length"],
+                })
 
         if not entetes:
             messagebox.showwarning("Aucune trame", "Aucune entête IP trouvée dans ce fichier.")
@@ -48,7 +79,7 @@ def choisir_fichier():
         with open(chemin_csv, "w", newline="", encoding="utf-8-sig") as csvfile:
             writer = csv.DictWriter(
                 csvfile,
-                fieldnames=["time", "src", "dst", "flags", "seq", "ack", "win", "length"],
+                fieldnames=["time", "src_ip", "src_port", "dst_ip", "dst_port", "flags", "length"],
                 delimiter=";"
             )
             writer.writeheader()
@@ -61,7 +92,9 @@ def choisir_fichier():
         for ev in entetes:
             zone_texte.insert(
                 tk.END,
-                f"{ev['time']} | {ev['src']} → {ev['dst']} | Flags={ev['flags']} | Seq={ev['seq']} | Ack={ev['ack']} | Win={ev['win']} | Len={ev['length']}\n"
+                f"{ev['time']} | "
+                f"{ev['src_ip']}:{ev['src_port']} → {ev['dst_ip']}:{ev['dst_port']} | "
+                f"Flags={ev['flags']} | Len={ev['length']}\n"
             )
 
     except Exception as e:
