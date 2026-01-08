@@ -12,7 +12,7 @@ maingit
 remote
 add
 origin
-https://github.com/QuentinL42/SAE1.05.gitgit
+https://github.com/QuentinL42/SAE1.05.git
 push
 -u
 origin
