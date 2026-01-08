@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport d'analyse réseau</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+        }
+        header {
+            background: linear-gradient(135deg, #005bea, #00c6fb);
+            padding: 25px;
+            text-align: center;
+            color: white;
+        }
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: 30px auto;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #005bea;
+            border-left: 5px solid #00c6fb;
+            padding-left: 10px;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        .menaces li {
+            background: #ffecec;
+            border-left: 5px solid #ff4d4d;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            list-style: none;
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            background: #e9eef5;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Rapport d'analyse réseau</h1>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h2>🔥 Score de dangerosité par IP</h2>
+        <img src="graph_scores_danger.png">
+        <h2>Tableau des scores</h2>
+        <table style='width:100%; border-collapse: collapse;'><tr style='background:#005bea;color:white;'><th style='padding:8px;border:1px solid #ddd;'>IP</th><th style='padding:8px;border:1px solid #ddd;'>Score</th></tr><tr style='background:#ff4d4d;'><td style='padding:8px;border:1px solid #ddd;'>BP-Linux8</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>159</td></tr><tr style='background:#ff4d4d;'><td style='padding:8px;border:1px solid #ddd;'>www.aggloroanne.fr</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>106</td></tr><tr style='background:#ff4d4d;'><td style='padding:8px;border:1px solid #ddd;'>190-0-175-100.gba.solunet.com.ar</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>100</td></tr><tr style='background:#ff4d4d;'><td style='padding:8px;border:1px solid #ddd;'>mauves.univ-st-etienne.fr</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>84</td></tr><tr style='background:#ff4d4d;'><td style='padding:8px;border:1px solid #ddd;'>par10s38-in-f3.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>41</td></tr><tr style='background:#ffe066;'><td style='padding:8px;border:1px solid #ddd;'>par21s23-in-f3.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>12</td></tr><tr style='background:#ffe066;'><td style='padding:8px;border:1px solid #ddd;'>par21s04-in-f4.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>11</td></tr><tr style='background:#ffe066;'><td style='padding:8px;border:1px solid #ddd;'>190</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>10</td></tr><tr style='background:#ffe066;'><td style='padding:8px;border:1px solid #ddd;'>par21s17-in-f1.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>9</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s23-in-f10.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>4</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>192.168.190.130</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>3</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s20-in-f14.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>2</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s17-in-f14.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>2</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s11-in-f14.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>1</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s05-in-f131.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>1</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par10s40-in-f3.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>1</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s11-in-f10.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>1</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>91.121.37.244</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>1</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s20-in-f10.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>mad01s26-in-f174.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>ec2-34-211-70-226.us-west-2.compute.amazonaws.com</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s22-in-f14.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>lhr25s01-in-f2.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par10s28-in-f14.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s20-in-f2.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>201.181.244.35.bc.googleusercontent.com</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>server-54-230-114-122.mrs52.r.cloudfront.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s23-in-f2.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>server-54-230-114-73.mrs52.r.cloudfront.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par10s40-in-f14.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s12-in-f14.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>server-54-230-114-7.mrs52.r.cloudfront.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>104.18.31.182</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>82.221.107.34.bc.googleusercontent.com</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>par21s18-in-f3.1e100.net</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>93.184.220.29</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr><tr style='background:#b3ffb3;'><td style='padding:8px;border:1px solid #ddd;'>ec2-35-166-112-194.us-west-2.compute.amazonaws.com</td><td style='padding:8px;border:1px solid #ddd;text-align:center;'>0</td></tr></table>
+    </div>
+
+    <div class="card">
+        <h2>🚨 Détail des menaces détectées</h2>
+        <ul class="menaces">
+            <li>Suspicion de scan HTTP : 2000 paquets SYN depuis 190-0-175-100.gba.solunet.com.ar vers 184.107.43.74.</li><li>Trafic SSH important entre 192.168.190.130 et BP-Linux8 (≈ 6188 octets).</li>
+        </ul>
+    </div>
+
+</div>
+
+<footer>
+    Rapport généré automatiquement — Analyse réseau & sécurité
+</footer>
+
+</body>
+</html>
