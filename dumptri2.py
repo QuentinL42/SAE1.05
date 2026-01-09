@@ -6,6 +6,7 @@ from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
 import os
 import webbrowser
+import json
 
 # ============================================================
 # 1) EXTRACTION DES TRAMES TCPDUMP
@@ -55,7 +56,6 @@ def analyser_menaces(entetes):
 # ============================================================
 
 def couleur_score(score):
-    """Retourne une couleur HTML selon le niveau de danger."""
     if score >= 30:
         return "#ff4d4d"   # rouge
     elif score >= 15:
@@ -66,26 +66,17 @@ def couleur_score(score):
         return "#b3ffb3"   # vert
 
 def calculer_scores_danger(entetes, menaces):
-    """
-    Score agressif :
-      - +10 par SYN suspect
-      - +6 par SSH anormal
-      - +1 par 20 paquets envoyés
-      - +1 par 3 destinations différentes
-    """
     syn_counts = Counter()
     ssh_counts = Counter()
     packet_counts = Counter()
     dest_sets = defaultdict(set)
 
-    # Volume et diversité
     for ev in entetes:
         src = ev["src_ip"]
         dst = ev["dst_ip"]
         packet_counts[src] += 1
         dest_sets[src].add(dst)
 
-    # Menaces
     for m in menaces:
         texte = m.lower()
 
@@ -118,14 +109,30 @@ def calculer_scores_danger(entetes, menaces):
 
     return dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
 
+# ============================================================
+# 3) TOP N CONFIGURABLE (TKINTER)
+# ============================================================
+
+def get_top_n():
+    try:
+        return max(1, int(entry_topn.get()))
+    except:
+        return 10
+
+# ============================================================
+# 4) GRAPHIQUE LOCAL (MATPLOTLIB)
+# ============================================================
+
 def tracer_scores_danger(scores, save_path=None):
     if not scores:
         labels = ["Aucune IP"]
         valeurs = [0]
         couleurs = ["#b3ffb3"]
     else:
-        labels = list(scores.keys())
-        valeurs = list(scores.values())
+        N = get_top_n()
+        top = list(scores.items())[:N]
+        labels = [ip for ip, score in top]
+        valeurs = [score for ip, score in top]
         couleurs = [couleur_score(s) for s in valeurs]
 
     plt.figure(figsize=(10, 5))
@@ -141,31 +148,316 @@ def tracer_scores_danger(scores, save_path=None):
     else:
         plt.show()
 
-def generer_table_scores_html(scores):
-    if not scores:
-        return "<p>Aucun score disponible.</p>"
+# ============================================================
+# 5) TABLEAU HTML
+# ============================================================
 
+def generer_table_scores_html(scores):
     lignes = []
-    lignes.append("<table style='width:100%; border-collapse: collapse;'>")
-    lignes.append("<tr style='background:#005bea;color:white;'>"
+    lignes.append("<table id='scoreTable' style='width:100%; border-collapse: collapse;'>")
+    lignes.append("<thead><tr style='background:#005bea;color:white;'>"
                   "<th style='padding:8px;border:1px solid #ddd;'>IP</th>"
                   "<th style='padding:8px;border:1px solid #ddd;'>Score</th>"
-                  "</tr>")
+                  "</tr></thead><tbody>")
 
     for ip, score in scores.items():
         couleur = couleur_score(score)
         lignes.append(
-            f"<tr style='background:{couleur};'>"
-            f"<td style='padding:8px;border:1px solid #ddd;'>{ip}</td>"
-            f"<td style='padding:8px;border:1px solid #ddd;text-align:center;'>{score}</td>"
+            f"<tr class='dataRow' style='background:{couleur};'>"
+            f"<td style='padding:8px;border:1px solid #ddd;color:black;'>{ip}</td>"
+            f"<td style='padding:8px;border:1px solid #ddd;text-align:center;color:black;'>{score}</td>"
             "</tr>"
         )
 
-    lignes.append("</table>")
+    lignes.append("</tbody></table>")
     return "".join(lignes)
 
 # ============================================================
-# 3) GRAPHIQUE : TOP 2–5 COUPLES IP LES PLUS ACTIFS
+# 6) RAPPORT HTML INTERACTIF (Chart.js + Mode sombre + Top N)
+# ============================================================
+
+def generer_html_rapport(scores, menaces):
+    labels = list(scores.keys())
+    valeurs = list(scores.values())
+    labels_json = json.dumps(labels, ensure_ascii=False)
+    valeurs_json = json.dumps(valeurs, ensure_ascii=False)
+
+    table_scores_html = generer_table_scores_html(scores)
+    menaces_html = "".join(f"<li>{m}</li>" for m in menaces)
+
+    return f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport d'analyse réseau</title>
+    <style>
+        :root {{
+            --bg-color: #f5f7fa;
+            --text-color: #222222;
+            --card-bg: #ffffff;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --header-bg: linear-gradient(135deg, #005bea, #00c6fb);
+            --table-border: #dddddd;
+            --menace-bg: #ffecec;
+            --menace-border: #ff4d4d;
+        }}
+        body.dark {{
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --card-bg: #2b2b2b;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            --header-bg: linear-gradient(135deg, #141e30, #243b55);
+            --table-border: #555555;
+            --menace-bg: #3b1f1f;
+            --menace-border: #ff6b6b;
+        }}
+        body {{
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            transition: background 0.3s, color 0.3s;
+        }}
+        header {{
+            background: var(--header-bg);
+            padding: 25px;
+            text-align: center;
+            color: white;
+        }}
+        .container {{
+            width: 90%;
+            max-width: 1100px;
+            margin: 30px auto;
+        }}
+        .card {{
+            background: var(--card-bg);
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            transition: background 0.3s, box-shadow 0.3s;
+        }}
+        h2 {{
+            color: #005bea;
+            border-left: 5px solid #00c6fb;
+            padding-left: 10px;
+        }}
+        body.dark h2 {{
+            color: #66aaff;
+            border-left-color: #3399ff;
+        }}
+        .menaces li {{
+            background: var(--menace-bg);
+            border-left: 5px solid var(--menace-border);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            list-style: none;
+        }}
+        footer {{
+            text-align: center;
+            padding: 15px;
+            background: #e9eef5;
+            margin-top: 30px;
+        }}
+        body.dark footer {{
+            background: #252525;
+        }}
+        table {{
+            color: inherit;
+        }}
+        #scoreTable th, #scoreTable td {{
+            border: 1px solid var(--table-border);
+        }}
+        /* Texte du tableau toujours noir pour lisibilité */
+        #scoreTable td,
+        #scoreTable th {{
+            color: #000000 !important;
+        }}
+        body.dark #scoreTable td,
+        body.dark #scoreTable th {{
+            color: #000000 !important;
+        }}
+        .top-controls {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }}
+        .top-controls input[type="number"] {{
+            width: 70px;
+            padding: 4px;
+        }}
+        .btn {{
+            padding: 6px 12px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            background: #005bea;
+            color: white;
+        }}
+        .btn:hover {{
+            background: #0040b3;
+        }}
+        body.dark .btn {{
+            background: #3399ff;
+        }}
+        body.dark .btn:hover {{
+            background: #1f7ad1;
+        }}
+        .btn-secondary {{
+            background: #666666;
+        }}
+        body.dark .btn-secondary {{
+            background: #444444;
+        }}
+        .btn-secondary:hover {{
+            background: #555555;
+        }}
+        body.dark .btn-secondary:hover {{
+            background: #333333;
+        }}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<header>
+    <h1>Rapport d'analyse réseau</h1>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <div class="top-controls">
+            <h2 style="margin:0;">🔥 Score de dangerosité par IP</h2>
+            <div>
+                <label for="topN">Afficher Top N IP :</label>
+                <input type="number" id="topN" value="10" min="1">
+                <button class="btn" onclick="applyTopN()">Mettre à jour</button>
+            </div>
+            <button class="btn btn-secondary" onclick="toggleDarkMode()">Mode sombre / clair</button>
+        </div>
+        <canvas id="scoreChart" height="120"></canvas>
+
+        <h2>Tableau des scores</h2>
+        {table_scores_html}
+    </div>
+
+    <div class="card">
+        <h2>🚨 Détail des menaces détectées</h2>
+        <ul class="menaces">
+            {menaces_html}
+        </ul>
+    </div>
+
+</div>
+
+<footer>
+    Rapport généré automatiquement — Analyse réseau & sécurité
+</footer>
+
+<script>
+    const labelsAll = {labels_json};
+    const scoresAll = {valeurs_json};
+    let scoreChart = null;
+    let isDark = false;
+
+    function buildChart(N) {{
+        const ctx = document.getElementById('scoreChart').getContext('2d');
+        const labels = labelsAll.slice(0, N);
+        const data = scoresAll.slice(0, N);
+
+        const textColor = isDark ? '#e0e0e0' : '#222222';
+        const gridColor = isDark ? '#555555' : '#cccccc';
+
+        if (scoreChart) {{
+            scoreChart.destroy();
+        }}
+
+        scoreChart = new Chart(ctx, {{
+            type: 'bar',
+            data: {{
+                labels: labels,
+                datasets: [{{
+                    label: 'Score de dangerosité',
+                    data: data,
+                    backgroundColor: data.map(v => {{
+                        if (v >= 30) return '#ff4d4d';
+                        if (v >= 15) return '#ff944d';
+                        if (v >= 5) return '#ffe066';
+                        return '#b3ffb3';
+                    }}),
+                    borderWidth: 1
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                plugins: {{
+                    legend: {{
+                        labels: {{
+                            color: textColor
+                        }}
+                    }},
+                    tooltip: {{
+                        enabled: true
+                    }}
+                }},
+                scales: {{
+                    x: {{
+                        ticks: {{
+                            color: textColor
+                        }},
+                        grid: {{
+                            color: gridColor
+                        }}
+                    }},
+                    y: {{
+                        beginAtZero: true,
+                        ticks: {{
+                            color: textColor
+                        }},
+                        grid: {{
+                            color: gridColor
+                        }}
+                    }}
+                }}
+            }}
+        }});
+    }}
+
+    function applyTopN() {{
+        let N = parseInt(document.getElementById('topN').value);
+        if (isNaN(N) || N < 1) N = 10;
+
+        const rows = document.querySelectorAll('#scoreTable tr.dataRow');
+        rows.forEach((row, idx) => {{
+            row.style.display = idx < N ? 'table-row' : 'none';
+        }});
+
+        buildChart(N);
+    }}
+
+    function toggleDarkMode() {{
+        isDark = !isDark;
+        document.body.classList.toggle('dark', isDark);
+        let N = parseInt(document.getElementById('topN').value);
+        if (isNaN(N) || N < 1) N = 10;
+        buildChart(N);
+    }}
+
+    window.onload = function() {{
+        applyTopN();
+    }};
+</script>
+
+</body>
+</html>
+"""
+
+# ============================================================
+# 7) GRAPHIQUE : TOP 2–5 COUPLES IP LES PLUS ACTIFS
 # ============================================================
 
 def tracer_barres_couples_ip(entetes, save_path=None):
@@ -195,99 +487,7 @@ def tracer_barres_couples_ip(entetes, save_path=None):
         plt.show()
 
 # ============================================================
-# 4) RAPPORT HTML SIMPLE
-# ============================================================
-
-def generer_html_rapport(graph_scores, table_scores_html, menaces_html):
-    return f"""<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Rapport d'analyse réseau</title>
-    <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background: #f5f7fa;
-            margin: 0;
-        }}
-        header {{
-            background: linear-gradient(135deg, #005bea, #00c6fb);
-            padding: 25px;
-            text-align: center;
-            color: white;
-        }}
-        .container {{
-            width: 90%;
-            max-width: 1100px;
-            margin: 30px auto;
-        }}
-        .card {{
-            background: white;
-            padding: 20px;
-            margin-bottom: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }}
-        h2 {{
-            color: #005bea;
-            border-left: 5px solid #00c6fb;
-            padding-left: 10px;
-        }}
-        img {{
-            max-width: 100%;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }}
-        .menaces li {{
-            background: #ffecec;
-            border-left: 5px solid #ff4d4d;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            list-style: none;
-        }}
-        footer {{
-            text-align: center;
-            padding: 15px;
-            background: #e9eef5;
-            margin-top: 30px;
-        }}
-    </style>
-</head>
-<body>
-
-<header>
-    <h1>Rapport d'analyse réseau</h1>
-</header>
-
-<div class="container">
-
-    <div class="card">
-        <h2>🔥 Score de dangerosité par IP</h2>
-        <img src="{os.path.basename(graph_scores)}">
-        <h2>Tableau des scores</h2>
-        {table_scores_html}
-    </div>
-
-    <div class="card">
-        <h2>🚨 Détail des menaces détectées</h2>
-        <ul class="menaces">
-            {menaces_html}
-        </ul>
-    </div>
-
-</div>
-
-<footer>
-    Rapport généré automatiquement — Analyse réseau & sécurité
-</footer>
-
-</body>
-</html>
-"""
-
-# ============================================================
-# 5) LOGIQUE PRINCIPALE + TKINTER
+# 8) LOGIQUE PRINCIPALE
 # ============================================================
 
 dernier_csv = None
@@ -358,7 +558,6 @@ def choisir_fichier():
                 f"{ev['dst_ip']}:{ev['dst_port']} | Flags={ev['flags']} | Len={ev['length']}\n"
             )
 
-        # Analyse des menaces + scores
         dernieres_menaces = analyser_menaces(entetes)
         derniers_scores = calculer_scores_danger(entetes, dernieres_menaces)
 
@@ -392,15 +591,7 @@ def exporter_rapport_html():
     if not chemin_html:
         return
 
-    dossier = os.path.dirname(chemin_html)
-    graph_scores = os.path.join(dossier, "graph_scores_danger.png")
-
-    tracer_scores_danger(derniers_scores, save_path=graph_scores)
-
-    table_scores_html = generer_table_scores_html(derniers_scores)
-    menaces_html = "".join(f"<li>{m}</li>" for m in dernieres_menaces)
-
-    html = generer_html_rapport(graph_scores, table_scores_html, menaces_html)
+    html = generer_html_rapport(derniers_scores, dernieres_menaces)
 
     with open(chemin_html, "w", encoding="utf-8") as f:
         f.write(html)
@@ -409,7 +600,7 @@ def exporter_rapport_html():
         webbrowser.open_new_tab(f"file://{chemin_html}")
 
 # ============================================================
-# 6) INTERFACE TKINTER
+# 9) INTERFACE TKINTER
 # ============================================================
 
 fenetre = tk.Tk()
@@ -429,6 +620,15 @@ zone_texte.pack(padx=10, pady=10, fill="both", expand=True)
 tk.Label(fenetre, text="Analyse des menaces :").pack()
 zone_menaces = tk.Text(fenetre, wrap="word", height=8, state="disabled", bg="#f0f0f0")
 zone_menaces.pack(padx=10, pady=5, fill="x")
+
+frame_topn = tk.Frame(fenetre)
+frame_topn.pack(pady=5)
+
+tk.Label(frame_topn, text="Afficher Top N IP (graphique local) :").pack(side="left")
+
+entry_topn = tk.Entry(frame_topn, width=5)
+entry_topn.insert(0, "10")
+entry_topn.pack(side="left")
 
 tk.Button(fenetre, text="Quitter", command=fenetre.destroy).pack(pady=10)
 
