@@ -15,11 +15,14 @@ import json
 pattern = re.compile(
     r'(?P<time>\d{2}:\d{2}:\d{2}\.\d+)\s+IP\s+'
     r'(?P<src>[^ ]+)\s+>\s+(?P<dst>[^:]+):'
-    r'.*Flags\s+\[(?P<flags>[^\]]+)\].*length\s+(?P<length>\d+)')
+    r'.*Flags\s+\[(?P<flags>[^\]]+)\].*length\s+(?P<length>\d+)'
+)
+
 
 def split_ip_port(field):
     parts = field.rsplit('.', 1)
     return (parts[0], parts[1]) if len(parts) == 2 else (field, "")
+
 
 def analyser_menaces(entetes):
     menaces = []
@@ -51,9 +54,11 @@ def analyser_menaces(entetes):
 
     return menaces or ["Aucune menace évidente détectée."]
 
+
 # ============================================================
 # 2) SCORE DE DANGEROSITÉ (VERSION AGRESSIVE + COULEURS)
 # ============================================================
+
 
 def couleur_score(score):
     if score >= 30:
@@ -64,6 +69,7 @@ def couleur_score(score):
         return "#ffe066"   # jaune
     else:
         return "#b3ffb3"   # vert
+
 
 def calculer_scores_danger(entetes, menaces):
     syn_counts = Counter()
@@ -80,11 +86,13 @@ def calculer_scores_danger(entetes, menaces):
     for m in menaces:
         texte = m.lower()
 
+        # SYN / scan HTTP
         if "scan http" in texte or "syn" in texte:
             match = re.search(r"depuis ([0-9\.]+)", m)
             if match:
                 syn_counts[match.group(1)] += 1
 
+        # SSH
         if "ssh" in texte:
             match = re.search(r"entre ([0-9\.]+) et ([0-9\.]+)", m)
             if match:
@@ -101,17 +109,22 @@ def calculer_scores_danger(entetes, menaces):
         vol = packet_counts[ip]
         nb_dest = len(dest_sets[ip])
 
+        # bonus volume et diversité
         volume_bonus = vol // 20
         diversite_bonus = nb_dest // 3
 
+        # Formule du score (documentée dans le Markdown)
+        # score = 10 * syn + 6 * ssh + volume_bonus + diversite_bonus
         score = 10 * syn + 6 * ssh + volume_bonus + diversite_bonus
         scores[ip] = score
 
     return dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
 
+
 # ============================================================
 # 3) TOP N CONFIGURABLE (TKINTER)
 # ============================================================
+
 
 def get_top_n():
     try:
@@ -119,9 +132,11 @@ def get_top_n():
     except:
         return 10
 
+
 # ============================================================
 # 4) GRAPHIQUE LOCAL (MATPLOTLIB)
 # ============================================================
+
 
 def tracer_scores_danger(scores, save_path=None):
     if not scores:
@@ -148,9 +163,11 @@ def tracer_scores_danger(scores, save_path=None):
     else:
         plt.show()
 
+
 # ============================================================
 # 5) TABLEAU HTML
 # ============================================================
+
 
 def generer_table_scores_html(scores):
     lignes = []
@@ -172,9 +189,11 @@ def generer_table_scores_html(scores):
     lignes.append("</tbody></table>")
     return "".join(lignes)
 
+
 # ============================================================
 # 6) RAPPORT HTML INTERACTIF (Chart.js + Mode sombre + Top N)
 # ============================================================
+
 
 def generer_html_rapport(scores, menaces):
     labels = list(scores.keys())
@@ -269,7 +288,6 @@ def generer_html_rapport(scores, menaces):
         #scoreTable th, #scoreTable td {{
             border: 1px solid var(--table-border);
         }}
-        /* Texte du tableau toujours noir pour lisibilité */
         #scoreTable td,
         #scoreTable th {{
             color: #000000 !important;
@@ -456,9 +474,11 @@ def generer_html_rapport(scores, menaces):
 </html>
 """
 
+
 # ============================================================
 # 7) GRAPHIQUE : TOP 2–5 COUPLES IP LES PLUS ACTIFS
 # ============================================================
+
 
 def tracer_barres_couples_ip(entetes, save_path=None):
     compteur_couples = Counter((ev["src_ip"], ev["dst_ip"]) for ev in entetes)
@@ -486,14 +506,115 @@ def tracer_barres_couples_ip(entetes, save_path=None):
     else:
         plt.show()
 
+
 # ============================================================
-# 8) LOGIQUE PRINCIPALE
+# 8) RAPPORT MARKDOWN (NOUVEAU)
 # ============================================================
+
+
+def generer_rapport_markdown(scores, menaces, entetes):
+    """
+    Génère un fichier Markdown résumant l'analyse :
+    - infos générales
+    - menaces détectées
+    - top IP par score
+    - formule du score expliquée
+    - commandes pour matplotlib + extension VS Code
+    """
+    chemin_md = filedialog.asksaveasfilename(
+        title="Enregistrer rapport Markdown",
+        defaultextension=".md",
+        filetypes=[("Markdown", "*.md"), ("Tous les fichiers", "*.*")]
+    )
+    if not chemin_md:
+        return
+
+    nb_trames = len(entetes)
+    nb_ip = len({e["src_ip"] for e in entetes} | {e["dst_ip"] for e in entetes})
+    nb_menaces = len(menaces)
+
+    lignes = []
+
+    lignes.append("# Rapport d'analyse réseau\n")
+    lignes.append("\n## Informations générales\n")
+    lignes.append(f"- Nombre total de trames analysées : **{nb_trames}**\n")
+    lignes.append(f"- Nombre total d'adresses IP distinctes : **{nb_ip}**\n")
+    lignes.append(f"- Nombre de menaces détectées : **{nb_menaces}**\n")
+
+    lignes.append("\n## Menaces détectées\n")
+    if menaces:
+        for m in menaces:
+            lignes.append(f"- {m}\n")
+    else:
+        lignes.append("- Aucune menace détectée.\n")
+
+    lignes.append("\n## Top IP par score de dangerosité\n")
+    if scores:
+        lignes.append("| IP | Score |\n")
+        lignes.append("| --- | --- |\n")
+        for ip, score in list(scores.items())[:20]:
+            lignes.append(f"| `{ip}` | **{score}** |\n")
+    else:
+        lignes.append("Aucun score disponible.\n")
+
+    lignes.append("\n## Formule du score de dangerosité\n")
+    lignes.append(
+        "Le score de dangerosité est calculé à partir de plusieurs composantes :\n"
+    )
+    lignes.append("- `syn` : nombre de suspicions de scan HTTP (SYN sur port 80) pour l'IP\n")
+    lignes.append("- `ssh` : nombre d'alertes de trafic SSH important pour l'IP\n")
+    lignes.append("- `volume_bonus` : bonus basé sur le nombre total de paquets envoyés par l'IP\n")
+    lignes.append("- `diversite_bonus` : bonus basé sur le nombre de destinations distinctes contactées\n")
+    lignes.append("\nLa formule utilisée est :\n")
+    lignes.append("```text\n")
+    lignes.append("score = 10 * syn + 6 * ssh + volume_bonus + diversite_bonus\n")
+    lignes.append("```\n")
+
+    lignes.append("\n## Commandes si problème avec Matplotlib\n")
+    lignes.append(
+        "Si la ligne `import matplotlib.pyplot as plt` provoque une erreur "
+        "(par exemple `ModuleNotFoundError: No module named 'matplotlib'`), "
+        "installer ou mettre à jour Matplotlib avec la commande suivante dans un terminal :\n"
+    )
+    lignes.append("```bash\n")
+    lignes.append("python -m pip install matplotlib\n")
+    lignes.append("```\n")
+    lignes.append(
+        "Sur certains systèmes (Linux/Mac), la commande suivante peut être nécessaire :\n"
+    )
+    lignes.append("```bash\n")
+    lignes.append("python3 -m pip install matplotlib\n")
+    lignes.append("```\n")
+
+    lignes.append("\n## Visualisation du Markdown dans VS Code\n")
+    lignes.append(
+        "Pour visualiser correctement ce fichier `.md` dans Visual Studio Code, "
+        "il est recommandé d'utiliser une extension de visualisation Markdown, "
+        "par exemple **Simply Markdown Viewer** (extension VS Code).\n"
+    )
+    lignes.append(
+        "Dans VS Code :\n"
+        "- Ouvrir l'onglet **Extensions** (Ctrl+Shift+X)\n"
+        "- Rechercher `Simply Markdown Viewer`\n"
+        "- Installer l'extension puis ouvrir ce fichier Markdown pour obtenir un rendu lisible.\n"
+    )
+
+    with open(chemin_md, "w", encoding="utf-8") as f:
+        f.writelines(lignes)
+
+    messagebox.showinfo("Succès", f"Rapport Markdown généré :\n{chemin_md}")
+
+
+# ============================================================
+# 9) LOGIQUE PRINCIPALE
+# ============================================================
+
 
 dernier_csv = None
 dernieres_menaces = []
 dernieres_entetes = []
 derniers_scores = {}
+
 
 def choisir_fichier():
     global dernier_csv, dernieres_menaces, dernieres_entetes, derniers_scores
@@ -572,11 +693,13 @@ def choisir_fichier():
     except Exception as e:
         messagebox.showerror("Erreur", str(e))
 
+
 def afficher_ip_suspectes():
     if not dernieres_entetes:
         messagebox.showwarning("Erreur", "Aucune donnée disponible.")
         return
     tracer_barres_couples_ip(dernieres_entetes)
+
 
 def exporter_rapport_html():
     if not derniers_scores:
@@ -599,9 +722,18 @@ def exporter_rapport_html():
     if messagebox.askyesno("Ouvrir", "Ouvrir le rapport dans le navigateur ?"):
         webbrowser.open_new_tab(f"file://{chemin_html}")
 
+
+def exporter_rapport_markdown():
+    if not derniers_scores or not dernieres_entetes:
+        messagebox.showwarning("Erreur", "Aucune donnée disponible. Lancez d'abord une analyse.")
+        return
+    generer_rapport_markdown(derniers_scores, dernieres_menaces, dernieres_entetes)
+
+
 # ============================================================
-# 9) INTERFACE TKINTER
+# 10) INTERFACE TKINTER
 # ============================================================
+
 
 fenetre = tk.Tk()
 fenetre.title("Analyse Dump Réseau — Scores & Menaces")
@@ -610,6 +742,7 @@ fenetre.geometry("900x800")
 tk.Button(fenetre, text="Choisir un fichier dump", command=choisir_fichier).pack(pady=10)
 tk.Button(fenetre, text="IP suspectes (couples IP)", command=afficher_ip_suspectes).pack(pady=5)
 tk.Button(fenetre, text="Exporter rapport HTML (scores)", command=exporter_rapport_html).pack(pady=5)
+tk.Button(fenetre, text="Exporter rapport Markdown", command=exporter_rapport_markdown).pack(pady=5)
 
 label_chemin = tk.Label(fenetre, text="Aucun fichier sélectionné")
 label_chemin.pack(pady=5)
