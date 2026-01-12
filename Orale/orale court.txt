@@ -1,0 +1,203 @@
+Antisèche Présentation SAÉ1.05 (12 min)
+0. Objectif global
+
+    Problème : réseau en Inde qui sature, 2 activités suspectes.
+
+​
+
+Objectif : outil Python qui analyse un fichier tcpdump, détecte des menaces, génère des rapports (HTML, Markdown, CSV).
+
+    ​
+
+1. Introduction (≈ 1 min)
+
+    Qui je suis + contexte rapide.
+
+    Problématique : “Pourquoi le réseau sature ?”
+
+    Ce que j’ai fait :
+
+        Extraction et traitement des trames tcpdump en Python.
+
+        Calcul d’un score de dangerosité par IP.
+
+        Génération de rapports pour les admins (France / Inde).
+
+        ​
+
+2. Architecture du programme (≈ 1–2 min)
+
+    3 couches :
+
+        Interface Tkinter : boutons, zones de texte, choix de fichier.
+
+        Logique Python :
+
+            Regex tcpdump → extraction time, IP, ports, flags, length.
+
+            Analyse menaces : scan HTTP, trafic SSH.
+
+            Calcul score.
+
+        Sorties :
+
+            CSV pour Excel.
+
+            HTML interactif (Chart.js, mode sombre, Top N).
+
+            Markdown explicatif (formule, commandes).
+
+3. Démo fichier “préparé” (≈ 2–3 min)
+
+Actions :
+
+    Lancer : python analyseur.py.
+
+    Bouton “Choisir un fichier dump” → fichier de test.
+
+    Montrer :
+
+        Zone texte : trames listées.
+
+        Zone menaces : phrases “Suspicion de scan HTTP…”, “Trafic SSH important…”.
+
+        Message de succès (CSV + scores générés).
+
+À dire :
+
+    “En quelques secondes, le programme :
+
+        lit le fichier tcpdump,
+
+        extrait les trames IP utiles,
+
+        détecte des menaces,
+
+        et prépare les fichiers pour la suite (CSV, HTML, Markdown).”
+
+4. Rapports (≈ 2–3 min)
+HTML
+
+    Bouton “Exporter rapport HTML”.
+
+    Montrer dans le navigateur :
+
+        Graphique barres : Top IP par score.
+
+        Couleurs (rouge / orange / jaune / vert) = niveau de danger.
+
+        Bouton mode sombre / clair.
+
+        Tableau des scores.
+
+        Liste des menaces.
+
+Phrase clé :
+
+    “L’HTML permet une visualisation rapide pour l’admin : il voit tout de suite quelles IP sont les plus dangereuses.”
+
+Markdown
+
+    Bouton “Exporter rapport Markdown”.
+
+    Ouvrir dans VS Code (avec Simply Markdown Viewer).
+
+    Montrer :
+
+        Statistiques : nb trames, nb IP, nb menaces.
+
+        Liste des menaces.
+
+        Formule du score.
+
+        Commandes python -m pip install matplotlib et extension Markdown pour VS Code.
+
+Phrase clé :
+
+    “Le Markdown sert de documentation : il explique la méthode, les résultats, la formule, et quoi faire si Matplotlib n’est pas installé.”
+
+CSV
+
+    Montrer le CSV (Excel) rapidement :
+
+        colonnes : time, src_ip, dst_ip, ports, flags, length.
+
+    Dire que Excel sert pour des analyses plus avancées (graphiques, filtres).
+
+    ​
+
+5. Formule du score (à placer quand tu montres Markdown ou HTML)
+
+    Variables :
+
+        syn = nb de suspicions de scan HTTP (paquets SYN → port 80).
+
+        ssh = nb d’alertes SSH anormal.
+
+        volume_bonus = nombre de paquets envoyés // 20.
+
+        diversite_bonus = nombre d’IP de destination différentes // 3.
+
+    Formule :
+
+        score = 10 × syn + 6 × ssh + volume_bonus + diversite_bonus
+
+    Idée à dire :
+
+        SYN plus lourd car un scan est très suspect.
+
+        SSH aussi suspect donc pondération 6.
+
+        Volume et diversité permettent de repérer les IP très actives sur beaucoup de cibles.
+
+6. Nouveau fichier (≈ 5 min)
+
+But (exigence de la SAÉ) : traiter un fichier donné le jour J.
+
+​
+
+Actions :
+
+    Re-cliquer “Choisir un fichier dump” → fichier fourni par le jury.
+
+    Attendre le traitement.
+
+    Montrer :
+
+        Trames, menaces, scores.
+
+        Rapports si tu as le temps (HTML ou Markdown rapide).
+
+À dire :
+
+    “On voit que l’IP X a un score élevé parce que :
+
+        beaucoup de SYN vers le port 80,
+
+        trafic SSH volumineux,
+
+        beaucoup de destinations différentes.”
+
+7. Conclusion (≈ 1 min)
+
+Points à rappeler :
+
+    Outil automatisé pour analyser un fichier tcpdump.
+
+    Détection de deux types d’activités suspectes : scan HTTP, SSH anormal.
+
+    Génération de trois types de sorties :
+
+        CSV pour Excel.
+
+        HTML pour visualisation.
+
+        Markdown pour documentation et partage (France / Inde).
+
+        ​
+
+    Adaptable à d’autres fichiers tcpdump (juste relancer et choisir un autre fichier).
+
+Phrase de fin :
+
+    “Cet outil permet aux équipes réseau en France et en Inde de gagner beaucoup de temps pour repérer les IP suspectes et comprendre rapidement ce qui se passe sur le réseau.”
